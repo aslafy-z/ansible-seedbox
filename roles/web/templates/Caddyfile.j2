@@ -1,0 +1,17 @@
+https://{{ hostname }} {
+  root /srv
+  basicauth / {{ auth_username }} {{ auth_password }}
+}
+
+https://{{ files_subdomain }}.{{ hostname }} {
+  root /downloads
+  browse /
+  basicauth / {{ auth_username }} {{ auth_password }}
+}
+
+https://{{ frontend_subdomain }}.{{ hostname }} {
+  proxy / {{ rtorrent_ip }}:80 {
+    websocket
+  }
+  basicauth / {{ auth_username }} {{ auth_password }}
+}

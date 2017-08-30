@@ -1,0 +1,31 @@
+- name: Ensure creation of folders
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ seedbox_root }}/tmp/caddy-db"
+    - "{{ seedbox_root }}/root"
+
+- name: Template index.html
+  template: src=index.html.j2 dest={{ seedbox_root }}/root/index.html
+
+- name: Get rtorrent ip
+  command: docker inspect -f '{% raw %}{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}{% endraw %}' rtorrent
+  register: rtorrent_ip
+- set_fact: rtorrent_ip="{{ rtorrent_ip.stdout }}"
+
+- name: Template caddyfile
+  template: src=Caddyfile.j2 dest={{ seedbox_root }}/Caddyfile
+
+- name: Create caddy container
+  docker_container:
+    name: caddy
+    image: abiosoft/caddy
+    published_ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "{{ seedbox_root }}/Caddyfile:/etc/Caddyfile"
+      - "{{ seedbox_root }}/tmp/caddy-db/:/root/.caddy"
+      - "{{ seedbox_root }}/root/index.html:/srv/index.html"
+      - "{{ data_root }}/torrents/:/downloads/"
+    recreate: true
+    state: started

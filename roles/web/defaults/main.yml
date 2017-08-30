@@ -1,0 +1,6 @@
+seedbox_root: /seedbox
+files_subdomain: files
+data_root: /data
+frontend_subdomain: torrents
+auth_username: root
+auth_password: root

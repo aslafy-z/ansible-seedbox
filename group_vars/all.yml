@@ -1,0 +1,5 @@
+hostname: example.tld
+data_root: /data
+
+auth_username: user # default: root
+auth_password: pass # default: root

@@ -1,0 +1,11 @@
+- name: Upgrade system
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Ensure creation of folders
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ data_root }}/"
+    - "{{ seedbox_root }}/"
+    - "{{ seedbox_root }}/tmp/"

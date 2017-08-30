@@ -1,0 +1,44 @@
+- name: Ensure creation of folders
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ data_root }}/torrents"
+    - "{{ seedbox_root }}/tmp/rtorrent"
+
+# Ugly fix for rights
+- name: Ensure creation of folders
+  file: path={{ item }} mode="a+r,a+w" state=touch
+  with_items:
+    - "{{ data_root }}/torrents"
+    - "{{ seedbox_root }}/tmp/rtorrent"
+
+## Flood + rtorrent container
+# - name: Create rtorrent container
+#   docker_container:
+#     name: rtorrent-flood
+#     image: wonderfall/rtorrent-flood
+#     published_ports:
+#       - 49184
+#       - 127.0.0.1:3000:3000
+#     interactive: false
+#     tty: true
+#     volumes:
+#       - "{{ data_root }}/torrents/:/data/"
+#       - "{{ seedbox_root }}/tmp/flood-db/:/flood-db/"
+#     recreate: yes
+#     state: started
+
+- name: Create rtorrent container
+  docker_container:
+    name: rtorrent
+    image: kerwood/rtorrent-lxc
+    published_ports:
+      - 51001:51001
+    exposed_ports:
+      - 80
+    interactive: false
+    tty: true
+    volumes:
+      - "{{ data_root }}/torrents/:/downloads"
+      - "{{ seedbox_root }}/tmp/rtorrent/:/home/rtorrent/rtorrent-session/"
+    recreate: true
+    state: started
