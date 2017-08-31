@@ -1,0 +1,1 @@
+seedbox ansible_host=MY.IP.AD.DR ansible_user=root
