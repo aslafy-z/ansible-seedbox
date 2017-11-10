@@ -1,5 +1,19 @@
 - hosts: all
+  gather_facts: False
+  pre_tasks:
+    - name: Install python for Ansible
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+      register: output
+      changed_when: output.stdout != ""
+      become: true
+
+- hosts: all
   roles:
-    - common
+    -
+      role: angstwad.docker_ubuntu
+      become: yes
+      docker_group_members: ["{{ansible_user_id}}"]
+    - apply_groups_changes
     - torrents
-    - web
+    - reverse_proxy
+    # - file_manager

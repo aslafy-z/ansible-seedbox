@@ -8,6 +8,10 @@ To use this, you should own a domain name and a server and make sure that A entr
 - {{frontend_subdomain}} (default: torrents)
 - {{files_subdomain}} (default: files)
 
+
+
+WARN: Will reload docker at setup
+
 ## Configure
 
 Configuration has to be done trough `group_vars/all.yml` file. More configurable variables can be found in the `defaults/main.yml` files.

@@ -1,0 +1,47 @@
+- name: Ensure creation of folders
+  file:
+    path: "{{ item }}"
+    state: directory
+    # owner: "{{ remote_username }}"
+  with_items:
+    - "{{ seedbox_data }}/nextcloud_db"
+
+- name: Downloading docker images
+  docker_image:
+    name: "{{ item }}"
+  with_items:
+    - nextcloud
+    - "mysql:{{ mysql_docker_image_version }}"
+
+- name: Create database container
+  docker_container:
+    name: db
+    image: "mysql:{{ mysql_docker_image_version }}"
+    env:
+      MYSQL_ROOT_PASSWORD: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: nextcloud
+      MYSQL_DATABASE: nextcloud
+    volumes:
+      - "{{ seedbox_data }}/nextcloud_db:/var/lib/mysql"
+    recreate: false
+    state: started
+
+- name: Create file manager container
+  docker_container:
+    name: web
+    image: nextcloud
+    links:
+      - db
+    env:
+      VIRTUAL_HOST: "{{ files_subdomain }}.{{ seedbox_hostname }}"
+      MYSQL_USER: nextcloud
+      MYSQL_PASSWORD: nextcloud
+      MYSQL_DATABASE: nextcloud
+      MYSQL_HOST: db
+      NEXTCLOUD_ADMIN_USER: "{{ auth_user }}"
+      NEXTCLOUD_ADMIN_PASSWORD: "{{ auth_password }}"
+    volumes:
+      - "{{ seedbox_data }}/files:/var/www/html"
+    recreate: true
+    state: started

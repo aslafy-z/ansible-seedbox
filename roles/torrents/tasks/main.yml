@@ -1,18 +1,39 @@
 - name: Ensure creation of folders
-  file: path={{ item }} state=directory
+  file:
+    path: "{{ item }}"
+    state: directory
   with_items:
-    - "{{ data_root }}/torrents"
-    - "{{ seedbox_root }}/tmp/rtorrent"
+    - "{{ seedbox_data }}/torrents"
+    # - "{{ seedbox_data }}/flood-db"
 
-# Ugly fix for rights
-- name: Ensure creation of folders
-  file: path={{ item }} mode="a+r,a+w" state=touch
-  with_items:
-    - "{{ data_root }}/torrents"
-    - "{{ seedbox_root }}/tmp/rtorrent"
+## Rtorrent + rutorrent container
+- name: Create torrents container
+  docker_container:
+    name: rutorrent
+    image: kfei/docktorrent
+    dns_servers:
+      - 8.8.8.8
+    published_ports:
+      - 45566:45566
+      - 9527:9527/udp
+    interactive: false
+    tty: true
+    env:
+      VIRTUAL_PORT: 80
+      VIRTUAL_HOST: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+      # Required to handle authentication on a seedbox level
+      AUTH_OFF: all
+
+      # CONTEXT_PATH: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+    volumes:
+      - "{{ seedbox_data }}/files:/rtorrent"
+    recreate: no
+    state: started
+
+
 
 ## Flood + rtorrent container
-# - name: Create rtorrent container
+# - name: Create rtorrent-flood container
 #   docker_container:
 #     name: rtorrent-flood
 #     image: wonderfall/rtorrent-flood
@@ -21,24 +42,13 @@
 #       - 127.0.0.1:3000:3000
 #     interactive: false
 #     tty: true
+#     env:
+#       VIRTUAL_PORT: 3000
+#       VIRTUAL_HOST: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+#       # CONTEXT_PATH: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+#       FLOOD_SECRET: "{{ flood_secret }}"
 #     volumes:
-#       - "{{ data_root }}/torrents/:/data/"
-#       - "{{ seedbox_root }}/tmp/flood-db/:/flood-db/"
-#     recreate: yes
+#       - "{{ seedbox_data }}/files:/data/"
+#       - "{{ seedbox_data }}/flood-db/:/flood-db/"
+#     recreate: no
 #     state: started
-
-- name: Create rtorrent container
-  docker_container:
-    name: rtorrent
-    image: kerwood/rtorrent-lxc
-    published_ports:
-      - 51001:51001
-    exposed_ports:
-      - 80
-    interactive: false
-    tty: true
-    volumes:
-      - "{{ data_root }}/torrents/:/downloads"
-      - "{{ seedbox_root }}/tmp/rtorrent/:/home/rtorrent/rtorrent-session/"
-    recreate: true
-    state: started

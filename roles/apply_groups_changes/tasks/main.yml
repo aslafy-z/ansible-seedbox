@@ -1,0 +1,7 @@
+# Needed to apply the group to an existing session, which is only axecuted after
+# logout/login
+# https://github.com/ansible/ansible/issues/20604
+- name: Kill SSH
+  shell: sleep 1; pkill -u {{ ansible_ssh_user }} sshd
+  async: 3
+  poll: 2

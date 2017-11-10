@@ -1,0 +1,36 @@
+- name: Downloading docker images
+  docker_image:
+    name: "{{ item }}"
+  with_items:
+    - jwilder/nginx-proxy
+
+- name: Install pyton packages
+  pip:
+    name: "{{item}}"
+    extra_args: --user
+  with_items:
+    - passlib
+
+- name: Create htpasswds directories
+  file:
+    path: "{{seedbox_root}}/passwd"
+    state: directory
+
+- name: Generate authentication configuration
+  when: (auth_user is defined) and (auth_password is defined)
+  htpasswd:
+    path: "{{seedbox_root}}/passwd/{{item}}.{{seedbox_hostname}}"
+    name: "{{auth_user}}"
+    password: "{{auth_password}}"
+    state: present
+  with_items: "{{auth_for}}"
+
+- name: Create reverse proxy container
+  docker_container:
+    name: reverse-proxy
+    image: jwilder/nginx-proxy
+    volumes:
+      - "{{seedbox_root}}/passwd:/etc/nginx/htpasswd"
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    ports:
+      - "80:80"

@@ -1,0 +1,10 @@
+version: '2'
+services:
+  t1:
+      image: nginx
+      volumes:
+      - /tmp/tototest:/data
+  t2:
+      image: nginx
+      volumes:
+      - /tmp/tototest/subdir:/data
