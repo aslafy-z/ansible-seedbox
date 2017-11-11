@@ -24,10 +24,11 @@ auth_user: username
 auth_password: changeme
 
 auth_for:
-  - "{{ files_subdomain }}mgr"
-  - "{{ files_subdomain }}cmd"
+  - "{{ files_subdomain }}"
   - "{{ torrent_subdomain }}"
   - "{{ vpn_subdomain }}"
+
+file_manager: cloudcmd
 
 # TODO
 ## enable_https: false

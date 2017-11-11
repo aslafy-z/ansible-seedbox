@@ -1,3 +1,20 @@
+- name: Downloading docker images
+  docker_image:
+    name: "hacdias/filemanager"
+  when: file_manager == 'filemanager'
+
+- name: Create filemanager container
+  docker_container:
+    name: web_filemanager
+    image: hacdias/filemanager
+    env:
+      VIRTUAL_HOST: "{{ files_subdomain }}.{{ seedbox_hostname }}"
+    volumes:
+      - "{{ seedbox_data }}/files:/srv"
+      - "{{ seedbox_data }}/filemanager_db:/etc/database.db"
+    recreate: true
+    state: started
+  when: file_manager == 'filemanager'
 
 - name: Ensure creation of folders
   file:
@@ -6,32 +23,19 @@
     # owner: "{{ remote_username }}"
   with_items:
     - "{{ seedbox_data }}/cloudcmd_db"
+  when: file_manager == 'cloudcmd'
 
 - name: Downloading docker images
   docker_image:
-    name: "{{ item }}"
-  with_items:
-    - hacdias/filemanager
-    - coderaiser/cloudcmd
-
-- name: Create filemanager container
-  docker_container:
-    name: web_filemanager
-    image: hacdias/filemanager
-    env:
-      VIRTUAL_HOST: "{{ files_subdomain }}mgr.{{ seedbox_hostname }}"
-    volumes:
-      - "{{ seedbox_data }}/files:/srv"
-      - "{{ seedbox_data }}/filemanager_db:/etc/database.db"
-    recreate: true
-    state: started
+    name: "coderaiser/cloudcmd"
+  when: file_manager == 'cloudcmd'
 
 - name: Create cloudcmd container
   docker_container:
     name: web_cloudcmd
     image: coderaiser/cloudcmd
     env:
-      VIRTUAL_HOST: "{{ files_subdomain }}cmd.{{ seedbox_hostname }}"
+      VIRTUAL_HOST: "{{ files_subdomain }}.{{ seedbox_hostname }}"
       VIRTUAL_PORT: 8000
     volumes:
       - "{{ seedbox_data }}/files:/share"
@@ -39,3 +43,4 @@
     command: --one-panel-mode --no-contact --root /share
     recreate: true
     state: started
+  when: file_manager == 'cloudcmd'

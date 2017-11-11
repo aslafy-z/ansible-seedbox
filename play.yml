@@ -12,6 +12,7 @@
     - role: angstwad.docker_ubuntu
       become: yes
       docker_group_members: ["{{ansible_user_id}}"]
+    - udondan.ssh-reconnect
     - apply_groups_changes
     - reverse_proxy
     - torrents

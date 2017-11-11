@@ -50,3 +50,6 @@
 #       - /var/run/docker.sock:/tmp/docker.sock:ro
 #     ports:
 #       - "80:80"
+
+## Generate DHPARAM
+## https://github.com/gronke/ansible-dhparam
