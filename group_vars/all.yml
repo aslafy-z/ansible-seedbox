@@ -4,32 +4,30 @@ seedbox_root: /tmp/seedbox
 seedbox_data: "{{seedbox_root}}/data"
 
 # Docker management
-mysql_docker_image_version: 5.6
+# mariadb_docker_image_version: 10
+mongodb_docker_image_version: 3.4
 
 # Serving
 seedbox_hostname: localhost
 torrent_subdomain: torrents
 files_subdomain: files
+vpn_subdomain: vpn
 
 
 # You won't have to remember that one, just change the default
 # for safety reasons
-flood_secret: imasupersecretsecret
-
-
+# flood_secret: imasupersecretsecret
 
 # Security
 
 auth_user: username
 auth_password: changeme
 
-## We don't need to activate auth for torrent_subdomain as flood embedd account
-## creation / login process.
 auth_for:
-  - "{{files_subdomain}}"
-
-
-
+  - "{{ files_subdomain }}mgr"
+  - "{{ files_subdomain }}cmd"
+  - "{{ torrent_subdomain }}"
+  - "{{ vpn_subdomain }}"
 
 # TODO
 ## enable_https: false

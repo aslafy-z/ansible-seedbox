@@ -9,11 +9,11 @@
 
 - hosts: all
   roles:
-    -
-      role: angstwad.docker_ubuntu
+    - role: angstwad.docker_ubuntu
       become: yes
       docker_group_members: ["{{ansible_user_id}}"]
     - apply_groups_changes
-    - torrents
     - reverse_proxy
-    # - file_manager
+    - torrents
+    - file_manager
+    - vpn

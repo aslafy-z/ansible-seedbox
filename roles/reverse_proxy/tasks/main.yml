@@ -6,31 +6,47 @@
 
 - name: Install pyton packages
   pip:
-    name: "{{item}}"
+    name: "{{ item }}"
     extra_args: --user
   with_items:
     - passlib
 
 - name: Create htpasswds directories
   file:
-    path: "{{seedbox_root}}/passwd"
+    path: "{{ seedbox_root }}/passwd"
     state: directory
 
 - name: Generate authentication configuration
   when: (auth_user is defined) and (auth_password is defined)
   htpasswd:
-    path: "{{seedbox_root}}/passwd/{{item}}.{{seedbox_hostname}}"
-    name: "{{auth_user}}"
-    password: "{{auth_password}}"
+    path: "{{ seedbox_root }}/passwd/{{ item }}.{{ seedbox_hostname }}"
+    name: "{{ auth_user }}"
+    password: "{{ auth_password }}"
     state: present
-  with_items: "{{auth_for}}"
+  with_items: "{{ auth_for }}"
 
 - name: Create reverse proxy container
   docker_container:
     name: reverse-proxy
     image: jwilder/nginx-proxy
     volumes:
-      - "{{seedbox_root}}/passwd:/etc/nginx/htpasswd"
+      - "{{ seedbox_root }}/passwd:/etc/nginx/htpasswd"
+      # - "{{ seedbox_root }}/certs:/etc/nginx/certs"
       - /var/run/docker.sock:/tmp/docker.sock:ro
     ports:
       - "80:80"
+
+## TODO: SSL with letsencrypt
+#       - "443:443"
+#
+# - name: Create reverse proxy http companion container
+#   docker_container:
+#     name: reverse-proxy
+#     image: jrcs/letsencrypt-nginx-proxy-companion
+#     env:
+#       ACME_CA_URI: https://acme-staging.api.letsencrypt.org/directory
+#     volumes:
+#       - "{{ seedbox_root }}/certs:/etc/nginx/certs"
+#       - /var/run/docker.sock:/tmp/docker.sock:ro
+#     ports:
+#       - "80:80"

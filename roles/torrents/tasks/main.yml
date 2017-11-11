@@ -3,8 +3,18 @@
     path: "{{ item }}"
     state: directory
   with_items:
-    - "{{ seedbox_data }}/torrents"
+    - "{{ seedbox_data }}/rtorrent_db"
+    - "{{ seedbox_data }}/files"
     # - "{{ seedbox_data }}/flood-db"
+
+- name: Ensure rights of folders
+  file:
+    path: "{{ item }}"
+    state: touch
+    mode: "a+rw"
+  with_items:
+    - "{{ seedbox_data }}/rtorrent_db"
+    - "{{ seedbox_data }}/files"
 
 ## Rtorrent + rutorrent container
 - name: Create torrents container
@@ -14,20 +24,20 @@
     dns_servers:
       - 8.8.8.8
     published_ports:
-      - 45566:45566
+      - 45566:45566/tcp
       - 9527:9527/udp
     interactive: false
     tty: true
     env:
-      VIRTUAL_PORT: 80
       VIRTUAL_HOST: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+      VIRTUAL_PORT: 80
       # Required to handle authentication on a seedbox level
       AUTH_OFF: all
-
-      # CONTEXT_PATH: "{{ torrent_subdomain }}.{{ seedbox_hostname }}"
+      LOGS_OFF: yes
     volumes:
-      - "{{ seedbox_data }}/files:/rtorrent"
-    recreate: no
+      - "{{ seedbox_data }}/rtorrent_db:/rtorrent"
+      - "{{ seedbox_data }}/files:/rtorrent/downloads"
+    recreate: true
     state: started
 
 

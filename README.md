@@ -8,9 +8,11 @@ To use this, you should own a domain name and a server and make sure that A entr
 - {{frontend_subdomain}} (default: torrents)
 - {{files_subdomain}} (default: files)
 
+### Install roles
 
-
-WARN: Will reload docker at setup
+```sh
+ansible-galaxy install -r requirements.yml
+```
 
 ## Configure
 

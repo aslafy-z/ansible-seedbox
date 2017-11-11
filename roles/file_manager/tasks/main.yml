@@ -1,47 +1,41 @@
+
 - name: Ensure creation of folders
   file:
     path: "{{ item }}"
     state: directory
     # owner: "{{ remote_username }}"
   with_items:
-    - "{{ seedbox_data }}/nextcloud_db"
+    - "{{ seedbox_data }}/cloudcmd_db"
 
 - name: Downloading docker images
   docker_image:
     name: "{{ item }}"
   with_items:
-    - nextcloud
-    - "mysql:{{ mysql_docker_image_version }}"
+    - hacdias/filemanager
+    - coderaiser/cloudcmd
 
-- name: Create database container
+- name: Create filemanager container
   docker_container:
-    name: db
-    image: "mysql:{{ mysql_docker_image_version }}"
+    name: web_filemanager
+    image: hacdias/filemanager
     env:
-      MYSQL_ROOT_PASSWORD: nextcloud
-      MYSQL_USER: nextcloud
-      MYSQL_PASSWORD: nextcloud
-      MYSQL_DATABASE: nextcloud
+      VIRTUAL_HOST: "{{ files_subdomain }}mgr.{{ seedbox_hostname }}"
     volumes:
-      - "{{ seedbox_data }}/nextcloud_db:/var/lib/mysql"
-    recreate: false
+      - "{{ seedbox_data }}/files:/srv"
+      - "{{ seedbox_data }}/filemanager_db:/etc/database.db"
+    recreate: true
     state: started
 
-- name: Create file manager container
+- name: Create cloudcmd container
   docker_container:
-    name: web
-    image: nextcloud
-    links:
-      - db
+    name: web_cloudcmd
+    image: coderaiser/cloudcmd
     env:
-      VIRTUAL_HOST: "{{ files_subdomain }}.{{ seedbox_hostname }}"
-      MYSQL_USER: nextcloud
-      MYSQL_PASSWORD: nextcloud
-      MYSQL_DATABASE: nextcloud
-      MYSQL_HOST: db
-      NEXTCLOUD_ADMIN_USER: "{{ auth_user }}"
-      NEXTCLOUD_ADMIN_PASSWORD: "{{ auth_password }}"
+      VIRTUAL_HOST: "{{ files_subdomain }}cmd.{{ seedbox_hostname }}"
+      VIRTUAL_PORT: 8000
     volumes:
-      - "{{ seedbox_data }}/files:/var/www/html"
+      - "{{ seedbox_data }}/files:/share"
+      - "{{ seedbox_data }}/cloudcmd_db:/root"
+    command: --one-panel-mode --no-contact --root /share
     recreate: true
     state: started

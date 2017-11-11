@@ -1,0 +1,74 @@
+- name: Ensure config file exists
+  copy:
+    src: "{{ role_path }}/files/pritunl.conf"
+    dest: "{{ seedbox_data }}/pritunl.conf"
+    force: yes
+    mode: "a+r"
+
+- name: Ensure creation of folders
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ seedbox_data }}/pritunl_db"
+    - "{{ seedbox_data }}/pritunl"
+
+- name: Downloading docker images
+  docker_image:
+    name: "{{ item }}"
+  with_items:
+    - jippi/pritunl
+    - "mongo:{{ mongodb_docker_image_version }}"
+
+- name: Create database container
+  docker_container:
+    name: pritunl_db
+    image: "mongo:{{ mongodb_docker_image_version }}"
+    volumes:
+      - "{{ seedbox_data }}/pritunl_db:/data/db"
+    recreate: false
+    state: started
+
+# Set recommended limits: https://docs.pritunl.com/v1/docs/configuration-5#section-increase-open-file-limit
+- name: Setting recommended limits
+  pam_limits:
+    domain: "{{ item.domain }}"
+    limit_type: "{{ item.limit_type }}"
+    limit_item: nofile
+    value: 64000
+  with_items:
+    - { domain: '*', limit_type: 'hard' }
+    - { domain: '*', limit_type: 'soft' }
+    - { domain: 'root', limit_type: 'hard' }
+    - { domain: 'root', limit_type: 'soft' }
+  become: true
+
+- name: Create pritunl container
+  docker_container:
+    name: pritunl
+    image: jippi/pritunl
+    links:
+      - pritunl_db
+    published_ports:
+      - 1194:1194/udp
+      - 1194:1194/tcp
+    exposed_ports:
+      - 9700
+    env:
+      VIRTUAL_HOST: "{{ vpn_subdomain }}.{{ seedbox_hostname }}"
+      VIRTUAL_PORT: 9700
+      PRITUNL_DONT_WRITE_CONFIG: true
+    volumes:
+      - "{{ seedbox_data }}/pritunl:/var/lib/pritunl"
+      - "{{ seedbox_data }}/pritunl.conf:/etc/pritunl.conf"
+    privileged: true
+    recreate: true
+    state: started
+
+- name: Configure printunl
+  command: "docker exec pritunl {{ item }}"
+  with_items:
+    - pritunl set app.reverse_proxy true
+    - pritunl set app.server_ssl false
+    - pritunl set app.server_port 9700
+
+# TODO: Use api to configure pritunl ? Bypass CSRF..
+# curl 'http://0.0.0.0:9700/organization' -H 'Content-Type: application/json' -H 'Csrf-Token: bemtgEjvp4dex1nWRQpBA0p3viUodovS' -H 'X-Requested-With: XMLHttpRequest' -H 'Cookie: session=.eJxVzt1ugjAYgOFbWXpsSFshRBOPFBxG6iz9QU4W4CMOacUIBn_ivc9sB8su4H3zPFAOtj5-1oCmD_RWoCliOhiYzexmub2zQ-MyK4d4EZpsGZp4Ia_oOUJd1XV1-y_b0iyClKXc7gd2N1-7tHG1XCXQtLTSp7ZMVcADswYSzH4W9f6Y95dz9Xew7KZk7CUacIZBaRPeVSoHEKubts21DGLMRWjzMSwVVrt83r8XIjoDBZpgr5UqS2LBO3UwbE295CVaC9EQYcxcHnZuqWHDNbcbTQwfq6ig5eRjO_vVtJdz-aIg4lOH-A52fDRCfW2rrs_tCU2JR7CLJ3RCn9_xL2I0.DOiVzA.QwKovC2ZhSmk-_mQKMa7mYZpejg' -H 'Connection: keep-alive' --data '{"id":null,"name":"a","user_count":null}'

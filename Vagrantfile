@@ -9,6 +9,9 @@ Vagrant.configure("2") do |config|
   # via 127.0.0.1 to disable public access
   config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
 
+  # Bind to host networking
+  config.vm.network "private_network", ip: "192.169.0.42"
+
   config.vm.provider :virtualbox do |v|
     v.name = "seedbox.dev"
     v.memory = 1024
